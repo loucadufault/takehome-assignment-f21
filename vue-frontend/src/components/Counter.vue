@@ -1,5 +1,12 @@
 <template>
-  <p>I'm a Counter!</p>
+  <div>
+    <p>I'm a Counter!</p>
+    <p>Current count is: {{count}}</p>
+    <span>
+      <button v-on:click="count++">Increment</button>
+      <button v-on:click="count--">Decrement</button>
+    </span>
+  </div>
 </template>
 
 <script>
