@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Counter, Tuple
 
 from flask import Flask, jsonify, request, Response
 import mockdb.mockdb_interface as db
@@ -54,6 +54,38 @@ def mirror(name):
 @app.route("/shows", methods=['GET'])
 def get_all_shows():
     return create_response({"shows": db.get('shows')})
+
+@app.route("/shows/<id>", methods=["GET"])
+def get_show(id):
+    show = db.getById("shows", int(id)) # todo handle non-digit string
+    if show is None:
+        return create_response(status=404, message="No show with this id exists")
+
+    return create_response(data={"show": show})
+
+@app.route("/shows", methods=["POST"])
+def create_show():
+    if "name" not in request.form or "episodes_seen" not in request.form:
+        return create_response(status=422, message="Request must send a 'name' and 'episodes_seen' parameter")
+
+    newShow = db.create("shows", {
+        "name": request.form["name"],
+        "episodes_seen": request.form["episodes_seen"]
+    })
+
+    return create_response(status=201, data={"show": newShow})
+
+@app.route("/shows/<id>", methods=["PUT"])
+def update_show(id):
+    updatedShow = db.updateById(
+        "shows", 
+        int(id), 
+        { allowedAttributeKey: request.form[allowedAttributeKey] for allowedAttributeKey in ["name", "episodes_seen"] }) # todo handle non-digit string
+
+    if updatedShow is None:
+        return create_response(status=404, message="No show with this id exists")
+    
+    return create_response(data={"show": updatedShow})
 
 @app.route("/shows/<id>", methods=['DELETE'])
 def delete_show(id):
