@@ -53,7 +53,14 @@ def mirror(name):
 
 @app.route("/shows", methods=['GET'])
 def get_all_shows():
-    return create_response({"shows": db.get('shows')})
+    shows = db.get('shows')
+
+    if "minEpisodes" in request.args:
+        minEpisodes = int(request.args["minEpisodes"])
+        return create_response({"shows": [show for show in shows if show["episodes_seen"] >= minEpisodes]}) # returns an empty list if there are no matching shows
+
+    return create_response({"shows": shows})
+    
 
 @app.route("/shows/<id>", methods=["GET"])
 def get_show(id):
@@ -65,12 +72,13 @@ def get_show(id):
 
 @app.route("/shows", methods=["POST"])
 def create_show():
-    if "name" not in request.form or "episodes_seen" not in request.form:
+    print(request.json.get("name"))
+    if "name" not in request.json or "episodes_seen" not in request.json:
         return create_response(status=422, message="Request must send a 'name' and 'episodes_seen' parameter")
 
     newShow = db.create("shows", {
-        "name": request.form["name"],
-        "episodes_seen": request.form["episodes_seen"]
+        "name": request.json["name"],
+        "episodes_seen": request.json["episodes_seen"]
     })
 
     return create_response(status=201, data={"show": newShow})
@@ -80,7 +88,7 @@ def update_show(id):
     updatedShow = db.updateById(
         "shows", 
         int(id), 
-        { allowedAttributeKey: request.form[allowedAttributeKey] for allowedAttributeKey in ["name", "episodes_seen"] }) # todo handle non-digit string
+        { allowedAttributeKey: request.json[allowedAttributeKey] for allowedAttributeKey in ["name", "episodes_seen"] if allowedAttributeKey in request.json }) # todo handle non-digit string
 
     if updatedShow is None:
         return create_response(status=404, message="No show with this id exists")
